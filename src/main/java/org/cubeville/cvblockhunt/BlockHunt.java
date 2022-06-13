@@ -6,10 +6,7 @@ import org.cubeville.cvgames.models.Game;
 import org.cubeville.cvgames.utils.GameUtils;
 import org.cubeville.cvgames.vartypes.GameVariableLocation;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class BlockHunt extends Game {
 
@@ -19,18 +16,21 @@ public class BlockHunt extends Game {
         addGameVariable("seeker-lobby", new GameVariableLocation());
     }
 
-    public HashMap<Player, BlockHuntState> state = new HashMap<>();
+    private BlockHuntState getState(Player p) {
+        if (state.get(p) == null || !(state.get(p) instanceof BlockHuntState)) return null;
+        return (BlockHuntState) state.get(p);
+    }
 
     @Override
-    public void onGameStart(List<Player> players) {
+    public void onGameStart(Set<Player> players) {
         Random rand = new Random();
         int seekerIndex = rand.nextInt(players.size());
-        for (int i = 0; i < players.size(); i++) {
-            Player player = players.get(i);
+        int i = 0;
+        for (Player player : players) {
             state.put(player, new BlockHuntState());
             if (i == seekerIndex) {
                 // set the player as a seeker
-                state.get(player).isSeeker = true;
+                getState(player).isSeeker = true;
                 player.teleport((Location) getVariable("seeker-lobby"));
                 player.sendMessage("§cYou are the seeker!");
             } else {
@@ -38,27 +38,28 @@ public class BlockHunt extends Game {
                 player.teleport((Location) getVariable("spawn"));
                 player.sendMessage("§aYou are a hider!");
             }
+            i++;
         }
     }
 
     @Override
-    public void onGameFinish(List<Player> players) {
+    public void onGameFinish() {
         // NOTE: Do not call "onGameFinish" directly because it will not finish the game properly
-        // Instead, call finishGame(List<Player> players) when you want to finish the game
+        // Instead, call finishGame() when you want to finish the game
         // If you have a better way of making sure this happens please let me know ;-;
-        if (state.values().stream().allMatch(blockHuntState -> blockHuntState.isSeeker)) {
-            GameUtils.messagePlayerList(players, "§cAll players were found!");
+        if (state.values().stream().allMatch(blockHuntState -> ((BlockHuntState) blockHuntState).isSeeker)) {
+            GameUtils.messagePlayerList(state.keySet(), "§cAll players were found!");
         } else {
-            GameUtils.messagePlayerList(players, "§aHiders win!");
+            GameUtils.messagePlayerList(state.keySet(), "§aHiders win!");
         }
     }
 
     @Override
-    public void onPlayerLogout(Player p) {
+    public void onPlayerLeave(Player p) {
         state.remove(p);
         // if there's only 1 player remaining or there are no seekers left, end the game
-        if (state.size() <= 1 || state.values().stream().noneMatch(blockHuntState -> blockHuntState.isSeeker)) {
-            finishGame(new ArrayList<>(state.keySet()));
+        if (state.size() <= 1 || state.values().stream().noneMatch(blockHuntState -> ((BlockHuntState) blockHuntState).isSeeker)) {
+            finishGame();
         }
     }
 }
