@@ -1,0 +1,9 @@
+name: CVBlockHunt
+version: 1.18
+main: org.cubeville.cvblockhunt.CVBlockHunt
+api-version: 1.18
+prefix: CVBlockHunt
+depend: [ CVGames ]
+authors: [ Ptown16, FrediW ]
+description: Block Hunt for Cubeville!
+website: cubeville.org
